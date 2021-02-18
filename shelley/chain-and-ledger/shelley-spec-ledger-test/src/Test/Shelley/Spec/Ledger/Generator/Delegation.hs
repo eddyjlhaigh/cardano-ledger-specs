@@ -24,6 +24,7 @@ import qualified Cardano.Ledger.Crypto as CC (Crypto)
 import Cardano.Ledger.Era (Crypto, Era)
 import Control.SetAlgebra (dom, domain, eval, (∈), (∉))
 import Data.Foldable (fold)
+import Data.Group (invert)
 import qualified Data.List as List
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map (elems, findWithDefault, fromList, keys, lookup, size)
@@ -52,6 +53,7 @@ import Shelley.Spec.Ledger.API
     KeyRole (..),
     MIRCert (..),
     MIRPot (..),
+    MIRTarget (..),
     Network (..),
     PParams,
     PParams' (..),
@@ -64,6 +66,7 @@ import Shelley.Spec.Ledger.API
   )
 import Shelley.Spec.Ledger.Address (mkRwdAcnt)
 import Shelley.Spec.Ledger.BaseTypes (interval0)
+import Shelley.Spec.Ledger.Coin (addDeltaCoin, toDeltaCoin)
 import Shelley.Spec.Ledger.Keys
   ( coerceKeyRole,
     hashKey,
@@ -464,7 +467,7 @@ genInstantaneousRewards s genesisDelegatesByHash pparams accountState delegSt = 
     take <$> QC.elements [0 .. (max 0 $ Map.size credentials - 1)]
       <*> QC.shuffle (Map.keys credentials)
   coins <- genCoinList 1 1000 (length winnerCreds)
-  let credCoinMap = Map.fromList $ zip winnerCreds coins
+  let credCoinMap = Map.fromList $ zip winnerCreds (fmap toDeltaCoin coins)
 
   coreSigners <-
     take <$> QC.elements [5 .. (max 0 $ length genDelegs_ - 1)]
@@ -475,7 +478,7 @@ genInstantaneousRewards s genesisDelegatesByHash pparams accountState delegSt = 
       potAmount = case pot of
         ReservesMIR -> _reserves accountState
         TreasuryMIR -> _treasury accountState
-      insufficientFunds = rewardAmount > potAmount
+      insufficientFunds = potAmount `addDeltaCoin` (invert rewardAmount) < Coin 0
   pure $
     if -- Discard this generator (by returning Nothing) if:
     -- we are in full decentralisation mode (d=0) when IR certs are not allowed
@@ -489,6 +492,6 @@ genInstantaneousRewards s genesisDelegatesByHash pparams accountState delegSt = 
       then Nothing
       else
         Just
-          ( DCertMir (MIRCert pot credCoinMap),
+          ( DCertMir (MIRCert pot (StakeAddressesMIR credCoinMap)),
             DelegateCred (cold <$> coreSigners)
           )
