@@ -40,9 +40,6 @@ type instance Core.PParams (AlonzoEra c) = PParams (AlonzoEra c)
 
 instance CC.Crypto c => UsesValue (AlonzoEra c)
 
-instance Typeable c => FromCBOR (PParams (AlonzoEra c)) where
-  fromCBOR = error "Need to work out how to deal with annotated/unannotated decoders"
-
 instance Typeable c => FromCBOR (PParamsUpdate (AlonzoEra c)) where
   fromCBOR = error "Need to work out how to deal with annotated/unannotated decoders"
 

@@ -114,7 +114,7 @@ type FamsFrom era =
     DecodeNonNegative (Value era),
     DecodeMint (Value era),
     Val (Value era), -- Arises because we use 'zero' as the 'mint' field in 'initial'
-    FromCBOR (Core.PParams era),
+    FromCBOR (Annotator (Core.PParams era)),
     FromCBOR (PParamsDelta era),
     FromCBOR (Value era),
     FromCBOR (Annotator (Script era)) -- Arises becaause DCert memoizes its bytes

@@ -44,6 +44,7 @@ import Control.DeepSeq (NFData)
 import Control.Monad (unless)
 import Data.Aeson (FromJSON (..), ToJSON (..), (.!=), (.:), (.:?), (.=))
 import qualified Data.Aeson as Aeson
+import Data.Coders (Annotator)
 import Data.Default.Class (Default, def)
 import Data.Foldable (fold)
 import Data.Functor.Identity (Identity)
@@ -257,6 +258,12 @@ instance (Era era) => FromCBOR (PParams era) where
         <*> fromCBORGroup -- _protocolVersion :: ProtVer
         <*> fromCBOR -- _minUTxOValue    :: Natural
         <*> fromCBOR -- _minPoolCost     :: Natural
+
+-- | Annotated decoder instance for PParams. This is not needed in the Shelley
+-- era, since PParams can be decoded without their annotation. But future eras
+-- will require the annotation.
+instance Era era => FromCBOR (Annotator (PParams era)) where
+  fromCBOR = pure <$> fromCBOR
 
 instance ToJSON (PParams era) where
   toJSON pp =
